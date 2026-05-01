@@ -23,6 +23,7 @@ Use this skill when:
 - native Codex/OpenAI image tooling is unavailable
 - you explicitly want a relay or proxy workflow
 - the provider exposes image generation through `chat/completions`
+- when this skill is explicitly chosen for image generation, prefer going straight to the fallback script instead of first trying other local generation paths
 
 ## 适用场景
 
@@ -109,6 +110,12 @@ The script tries to parse:
 - `data:image/...;base64,...`
 - `b64_json`
 - direct image URLs ending in `.png`, `.jpg`, `.jpeg`, or `.webp`
+
+## Troubleshooting
+
+- If you explicitly use this skill for image generation, default directly to `scripts/invoke-chat-image-fallback.ps1` instead of first trying other local generation paths.
+- Some relays require a separate image key or image channel for image models. Do not assume the current `OPENAI_API_KEY` is automatically the correct key for image generation.
+- If the relay returns `model_not_found` and mentions `under group vip_2`, first suspect the wrong key or channel rather than a wrong model name.
 
 ## 输出结果
 
