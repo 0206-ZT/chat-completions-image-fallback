@@ -9,9 +9,11 @@ description: Build and run a fallback image-generation workflow for relay or pro
 
 Use this skill when native `image_gen` is unavailable and a third-party relay exposes image generation through chat completions. The core resource is `scripts/invoke-chat-image-fallback.ps1`, a reusable PowerShell client that posts a prompt to a configurable endpoint and saves the first parseable image from the response.
 
+When this skill is explicitly selected for an image-generation task, do not first try other local image-generation paths, native `/v1/images/generations`, or alternate built-in tooling. Go straight to `scripts/invoke-chat-image-fallback.ps1` unless the user explicitly asks to use a different path.
+
 ## Workflow
 
-1. Prefer native Codex/OpenAI image tools when they are available. Use this fallback only when the user explicitly wants a relay/proxy workflow or native image tooling is missing.
+1. If this skill is being used for image generation, default directly to the fallback script workflow. Do not first detour through native image tools, local generation helpers, or `/v1/images/generations` unless the user explicitly asks for another path.
 2. Collect or infer these four settings:
    - API key: use `OPENAI_API_KEY` by default. Do not ask the user to paste secrets in chat.
    - Base URL: for example `https://www.openclaudecode.cn/v1`.
