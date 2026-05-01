@@ -11,10 +11,28 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $ApiKey) { $ApiKey = $env:OPENAI_API_KEY }
-if (-not $ApiKey) { $ApiKey = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
-if (-not $ApiKey) { $ApiKey = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "Machine") }
-if (-not $ApiKey) { throw "OPENAI_API_KEY is not set. Set it in the environment or pass -ApiKey." }
+function Get-EnvironmentValue {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$Names
+  )
+
+  foreach ($name in $Names) {
+    $value = [Environment]::GetEnvironmentVariable($name, "Process")
+    if ($value) { return $value }
+
+    $value = [Environment]::GetEnvironmentVariable($name, "User")
+    if ($value) { return $value }
+
+    $value = [Environment]::GetEnvironmentVariable($name, "Machine")
+    if ($value) { return $value }
+  }
+
+  return $null
+}
+
+if (-not $ApiKey) { $ApiKey = Get-EnvironmentValue -Names @("OPENAI_IMAGE_API_KEY", "OPENAI_API_KEY") }
+if (-not $ApiKey) { throw "Neither OPENAI_IMAGE_API_KEY nor OPENAI_API_KEY is set. Set one of them in the environment or pass -ApiKey." }
 
 if (-not $BaseUrl) { $BaseUrl = $env:OPENAI_BASE_URL }
 if (-not $BaseUrl) { $BaseUrl = [Environment]::GetEnvironmentVariable("OPENAI_BASE_URL", "User") }
