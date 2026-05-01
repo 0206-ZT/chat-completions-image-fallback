@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chat Completions Image Fallback"
+  short_description: "Generate images through chat-completions compatible relay APIs."
+  default_prompt: "Use this skill to configure and run a chat/completions image fallback with a relay API key, base URL, model name, endpoint, and prompt."

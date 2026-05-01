@@ -1,0 +1,16 @@
+# Generated outputs
+output/
+
+# Editor settings
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# PowerShell / temp artifacts
+*.tmp
+*.bak
+*.log
