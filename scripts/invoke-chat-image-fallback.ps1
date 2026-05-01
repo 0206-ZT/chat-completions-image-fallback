@@ -65,8 +65,48 @@ $headers = @{
   "Content-Type" = "application/json"
 }
 
+function Get-ErrorResponseText {
+  param(
+    [Parameter(Mandatory = $true)]
+    $ErrorRecord
+  )
+
+  $message = $ErrorRecord.Exception.Message
+
+  try {
+    $response = $ErrorRecord.Exception.Response
+    if (-not $response) {
+      return $message
+    }
+
+    $stream = $response.GetResponseStream()
+    if (-not $stream) {
+      return $message
+    }
+
+    $reader = New-Object IO.StreamReader($stream)
+    $body = $reader.ReadToEnd()
+    if ($body) {
+      return $body
+    }
+  } catch {
+  }
+
+  return $message
+}
+
 Write-Host "Calling $uri with model $Model ..."
-$response = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $body -TimeoutSec $TimeoutSec
+try {
+  $response = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $body -TimeoutSec $TimeoutSec
+} catch {
+  $errorText = Get-ErrorResponseText -ErrorRecord $_
+
+  if ($errorText -match 'model_not_found' -and $errorText -match 'under group vip_2') {
+    throw "Relay returned model_not_found under group vip_2. This usually means the current API key is on a text-oriented channel, not that the model name is wrong. Try a separate image key or image channel for image models. Raw error: $errorText"
+  }
+
+  throw "Request failed. Raw error: $errorText"
+}
 
 $stem = [IO.Path]::Combine($outDir, [IO.Path]::GetFileNameWithoutExtension($outPath))
 $jsonPath = "$stem-response.json"

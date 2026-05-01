@@ -17,6 +17,7 @@ Use this skill when native `image_gen` is unavailable and a third-party relay ex
    - Base URL: for example `https://www.openclaudecode.cn/v1`.
    - Model: for example `gpt-image-2`.
    - Endpoint: usually `chat/completions`; accept full paths such as `/v1/chat/completions` or full URLs.
+   - Before assuming the key is correct, sanity-check whether the relay uses a separate image key or image channel for image models. Do not assume the current `OPENAI_API_KEY` is automatically the right key for image generation.
 3. Generate or run a script based on `scripts/invoke-chat-image-fallback.ps1`.
 4. Save both the raw JSON response and extracted message text next to the final image. If image parsing fails, inspect the raw response and add a parser for the relay's actual return shape.
 5. Report the image path, raw response path, prompt, model, endpoint, and whether a URL or base64 payload was parsed.
@@ -62,6 +63,11 @@ When parsing fails, inspect those files. Common new parser additions:
 - `choices[0].message.content` contains Markdown with a nonstandard URL.
 - the relay returns `data[0].b64_json`.
 - the relay returns `image_url`, `images[0].url`, or a JSON string inside message content.
+
+## Troubleshooting
+
+- If the relay returns `model_not_found` and the error mentions `under group vip_2`, first suspect that the wrong key or channel is being used, not that the model name is wrong.
+- Some relays split text and image access across different keys or groups. If an image model fails under a text-oriented group such as `vip_2`, explicitly tell the user that image generation may require a separate image key or image channel.
 
 ## Safety And Secrets
 
