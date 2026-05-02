@@ -11,6 +11,8 @@ Use this skill when native `image_gen` is unavailable and a third-party relay ex
 
 When this skill is explicitly selected for an image-generation task, do not first try other local image-generation paths, native `/v1/images/generations`, or alternate built-in tooling. Go straight to `scripts/invoke-chat-image-fallback.ps1` unless the user explicitly asks to use a different path.
 
+This skill follows a single-script evolution model. `scripts/invoke-chat-image-fallback.ps1` is the only supported runtime entrypoint. If a new relay/API requires script changes, generate a temporary candidate script first, validate it, then promote it by replacing `scripts/invoke-chat-image-fallback.ps1`. Do not keep multiple long-lived runtime variants in the directory.
+
 ## Workflow
 
 1. If this skill is being used for image generation, default directly to the fallback script workflow. Do not first detour through native image tools, local generation helpers, or `/v1/images/generations` unless the user explicitly asks for another path.
@@ -20,11 +22,17 @@ When this skill is explicitly selected for an image-generation task, do not firs
    - Model: for example `gpt-image-2`.
    - Endpoint: usually `chat/completions`; accept full paths such as `/v1/chat/completions` or full URLs.
    - Before assuming the key is correct, sanity-check whether the relay uses a separate image key or image channel for image models. Do not assume the current `OPENAI_API_KEY` is automatically the right key for image generation.
-3. Generate or run a script based on `scripts/invoke-chat-image-fallback.ps1`.
-4. Save both the raw JSON response and extracted message text next to the final image. If image parsing fails, inspect the raw response and add a parser for the relay's actual return shape.
-5. Report the image path, raw response path, prompt, model, endpoint, and whether a URL or base64 payload was parsed.
+3. When adapting the script for a new relay/API, generate a temporary candidate script instead of introducing a second permanent runtime script.
+4. Validate the candidate before promotion:
+   - PowerShell parsing must succeed.
+   - A minimal live probe against the target relay/API must succeed.
+5. If validation succeeds, replace `scripts/invoke-chat-image-fallback.ps1` with the validated candidate and remove the temporary candidate file. If validation fails, keep the current canonical script unchanged.
+6. Save both the raw JSON response and extracted message text next to the final image. If image parsing fails, inspect the raw response and add a parser for the relay's actual return shape.
+7. Report the image path, raw response path, prompt, model, endpoint, and whether a URL or base64 payload was parsed.
 
 ## Running The Script
+
+Always treat `scripts/invoke-chat-image-fallback.ps1` as the canonical runtime path. Consumers of this skill should call that path directly, even after the script has been adapted for a new relay/API.
 
 Use the bundled script directly, copying it into the workspace only if the user wants a persistent project-local helper. Example:
 
@@ -70,6 +78,7 @@ When parsing fails, inspect those files. Common new parser additions:
 
 - If the relay returns `model_not_found` and the error mentions `under group vip_2`, first suspect that the wrong key or channel is being used, not that the model name is wrong.
 - Some relays split text and image access across different keys or groups. If an image model fails under a text-oriented group such as `vip_2`, explicitly tell the user that image generation may require a separate image key or image channel.
+- If a candidate script for a new relay/API fails either parse validation or the minimal live probe, do not promote it. Keep using the current `scripts/invoke-chat-image-fallback.ps1` until a validated candidate succeeds.
 
 ## Safety And Secrets
 

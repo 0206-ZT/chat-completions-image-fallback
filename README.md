@@ -9,6 +9,14 @@ Generate images through OpenAI-compatible `chat/completions` relay APIs when nat
 - Wraps a reusable PowerShell client for relay/proxy image generation.
 - Accepts a prompt, model name, base URL, and endpoint.
 - Saves the raw response JSON, extracted content text, and the first parseable image.
+- Uses a single evolving runtime script: `scripts/invoke-chat-image-fallback.ps1`.
+
+## Recent Updates
+
+- The repo now follows a strict single-script model: `scripts/invoke-chat-image-fallback.ps1` is the only supported runtime entrypoint.
+- If a new relay/API needs script changes, generate a temporary candidate first and promote it only after a PowerShell parse check and a minimal live probe succeed.
+- The script now prefers `OPENAI_IMAGE_API_KEY` before `OPENAI_API_KEY`, so image-specific credentials can override text-channel defaults.
+- Relay errors such as `model_not_found` under `vip_2` are now documented as likely key/channel mismatches rather than simple model-name mistakes.
 
 ## 这个 Skill 能做什么
 
@@ -47,6 +55,20 @@ Use this skill when:
     `-- invoke-chat-image-fallback.ps1
 ```
 
+## Single-Script Policy
+
+This repository uses a single evolving runtime script: `scripts/invoke-chat-image-fallback.ps1`.
+
+When a new relay/API needs a script update:
+
+- generate a temporary candidate script first
+- validate it with a PowerShell parse check
+- validate it with a minimal live probe against the target relay/API
+- only then replace `scripts/invoke-chat-image-fallback.ps1`
+- remove the temporary candidate after promotion
+
+Old runtime variants are not kept as sibling scripts in the working tree. Git history is the rollback path.
+
 ## Script Interface
 
 The bundled script preserves this runtime interface:
@@ -61,7 +83,7 @@ The bundled script preserves this runtime interface:
 
 ## Required Inputs
 
-- API key: defaults to `OPENAI_API_KEY`
+- API key: prefers `OPENAI_IMAGE_API_KEY`, then falls back to `OPENAI_API_KEY`
 - Base URL: defaults to `OPENAI_BASE_URL`
 - Model: for example `gpt-image-2`
 - Endpoint: usually `chat/completions`
@@ -116,6 +138,7 @@ The script tries to parse:
 - If you explicitly use this skill for image generation, default directly to `scripts/invoke-chat-image-fallback.ps1` instead of first trying other local generation paths.
 - Some relays require a separate image key or image channel for image models. Do not assume the current `OPENAI_API_KEY` is automatically the correct key for image generation.
 - If the relay returns `model_not_found` and mentions `under group vip_2`, first suspect the wrong key or channel rather than a wrong model name.
+- If you adapt the script for a new relay/API, only promote the new version after it passes both a parse check and a minimal live probe. Until then, keep using the current canonical script path.
 
 ## 输出结果
 
